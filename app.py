@@ -2,22 +2,16 @@ import socket
 import ssl
 import requests
 from datetime import datetime
-import pandas as pd
 import click
 from rich.console import Console
+from rich.table import Table
 from rich.markup import escape  # Importar escape
 import time  # Importar time para sleep
 
 console = Console()
 
-def get_ssl_info(url):
+def get_http_status(url):
     try:
-        while True:
-            # Cargar el archivo Excel
-            with open('urls.txt', 'r') as file:
-                for urls in file:
-                    urls = [line.strip() for line in file if line.strip()]  # Leer líneas no vacías
-                    
         response = requests.get(f"http://{url}", timeout=5)  # Agregar timeout
         status_code = str(response.status_code)
         current_time = datetime.now().strftime("%H:%M:%S")  # Hora actual en cada llamada
@@ -42,13 +36,18 @@ def get_ssl_info(url):
 @click.option('--interval', '-i', default=60, help='Intervalo de verificación en segundos')
 
 def monitor_ssl(mode, interval):
+    # Leer las URLs desde un archivo .txt
+    with open('urls.txt', 'r') as file:
+        urls = [line.strip() for line in file if line.strip()]
+
     if mode == 'monitor':
         console.print("Iniciando monitoreo...", style="bold blue")
-        try:    
-            
-            get_ssl_info(urls)
-            time.sleep(interval)  # Esperar antes de la próxima iteración
-            return urls
+        try:
+            while True:
+                for url in urls:
+                    get_http_status(url)
+                time.sleep(interval)  # Esperar antes de la próxima iteración
+                
         except KeyboardInterrupt:
             console.print("\nMonitoreo detenido.", style="bold red")
 
