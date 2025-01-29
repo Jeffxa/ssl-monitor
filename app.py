@@ -1,11 +1,13 @@
 import socket
 import ssl
 import requests
-from datetime import datetime
 import click
+import time  # Importar time para sleep
+from datetime import datetime
 from rich.console import Console
 from rich.markup import escape  # Importar escape
-import time  # Importar time para sleep
+from notifypy import Notify # type: ignore
+import pandas as pd
 
 console = Console()
 
@@ -36,9 +38,19 @@ def get_http_status(url):
 @click.command()
 @click.option('--mode', '-m', default='monitor', help='Execution mode')
 @click.option('--interval', '-i', default=60, help='Intervalo de verificación en segundos')
-@click.option('--alert', '-a', default='No', help='show notification in desktop')
+@click.option('--alert', '-a', default='no', help='Show notification in desktop')
+@click.option('--report', '-r', default='no', help='Generate a report in an excel file')
 
-def monitor_ssl(mode, interval, alert):
+def monitor_ssl(mode, interval, alert, report):
+    
+    # Create datafrane for ssl audit report
+    
+    df = pd.DataFrame(columns=['date',
+                               'url',
+                               'status code',
+                               'ssl exp'
+                               ])
+    
     # Leer las URLs desde un archivo .txt
     with open('urls.txt', 'r') as file:
         urls = [line.strip() for line in file if line.strip()]
@@ -52,8 +64,7 @@ def monitor_ssl(mode, interval, alert):
                 time.sleep(interval)  # Esperar antes de la próxima iteración
 
         except KeyboardInterrupt:
-            if alert == 'yes':
-                exec(open('./notify/keyBoardInterrupted.py').read())
+            exec(open('./notify/keyBoardInterrupted.py').read())
 
     if mode == 'audit':
         # Leer las URLs desde un archivo .txt
@@ -62,6 +73,8 @@ def monitor_ssl(mode, interval, alert):
         
         console.print('[bold cyan]Is auditing... ![/bold cyan]')
 
+        counter = 0
+        
         for url in urls:
             current_time = datetime.now().strftime("%H:%M:%S")  # Hora actual en cada llamada
             try:
@@ -69,7 +82,7 @@ def monitor_ssl(mode, interval, alert):
                 context = ssl.create_default_context()
 
                 # Connect to the server using the context
-                with socket.create_connection((url, 443), timeout=3) as sock:
+                with socket.create_connection((url, 443), timeout=5) as sock:
                     with context.wrap_socket(sock, server_hostname=url) as ssock:
                         cert = ssock.getpeercert()
 
@@ -94,13 +107,33 @@ def monitor_ssl(mode, interval, alert):
                         # Get status
                         response = requests.get(f"http://{url}")
                         statusCode  = response.status_code
+                        
+                        counter = counter + 1
 
+                       
+                            
+                
             except Exception as e:
                 console.print(f"[bold cyan][{current_time}][/bold cyan] {url} [bold red][SSL not found][/bold red]")
+                current_time
+                url
                 exp_date = f"SSL not found"
                 statusCode = "No response"
+                
+            if report == 'yes':
+                # Generate report
+                df.at[counter, 'date'] = current_time
+                df.at[counter, 'url'] = url
+                df.at[counter, 'status code'] = statusCode
+                df.at[counter, 'ssl exp'] = exp_date 
+        # Save report
+            hoy = datetime.now()
+            FFH = hoy.strftime("%Y-%m-%d_%H%M")
+            nombre = FFH + '_reporte'
+            df.to_excel('{}.xlsx'.format(nombre),index=False)
 
-            # counter = counter + 1
+
+            
         if alert == 'yes':
             exec(open('notify/AuditCompleted.py').read())
 
