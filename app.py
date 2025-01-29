@@ -6,6 +6,7 @@ import time  # Importar time para sleep
 from datetime import datetime
 from rich.console import Console
 from rich.markup import escape  # Importar escape
+from rich.progress import track
 from notifypy import Notify # type: ignore
 import pandas as pd
 
@@ -75,7 +76,7 @@ def monitor_ssl(mode, interval, alert, report):
 
         counter = 1
         
-        for url in urls:
+        for url in track(urls, description='progressing... !'):
             now = datetime.now()
             current_time = now.strftime("%Y-%m-%d")
             try:
@@ -109,8 +110,6 @@ def monitor_ssl(mode, interval, alert, report):
                         response = requests.get(f"http://{url}")
                         statusCode  = response.status_code
                         
-                        
-
             except Exception as e:
                 console.print(f"[bold cyan][{current_time}][/bold cyan] {url} [bold red][SSL not found][/bold red]")
                 current_time
@@ -120,18 +119,18 @@ def monitor_ssl(mode, interval, alert, report):
             
             # Incremental for make report    
             counter = counter + 1
-            
+        
             if report == 'yes':
                 # Generate report
                 df.at[counter, 'date'] = current_time
                 df.at[counter, 'url'] = url
                 df.at[counter, 'status code'] = statusCode
                 df.at[counter, 'ssl expiration date'] = exp_date 
-        # Save report
-            hoy = datetime.now()
-            FFH = hoy.strftime("%Y-%m-%d_%H%M")
-            nombre = FFH + '_reporte'
-            df.to_excel('{}.xlsx'.format(nombre),index=False)
+    # Save report
+        hoy = datetime.now()
+        FFH = hoy.strftime("%Y-%m-%d_%H%M")
+        nombre = FFH + '_reporte'
+        df.to_excel('{}.xlsx'.format(nombre),index=False)
 
 
             
