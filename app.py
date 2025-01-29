@@ -48,7 +48,7 @@ def monitor_ssl(mode, interval, alert, report):
     df = pd.DataFrame(columns=['date',
                                'url',
                                'status code',
-                               'ssl exp'
+                               'ssl expiration date'
                                ])
     
     # Leer las URLs desde un archivo .txt
@@ -73,16 +73,17 @@ def monitor_ssl(mode, interval, alert, report):
         
         console.print('[bold cyan]Is auditing... ![/bold cyan]')
 
-        counter = 0
+        counter = 1
         
         for url in urls:
-            current_time = datetime.now().strftime("%H:%M:%S")  # Hora actual en cada llamada
+            now = datetime.now()
+            current_time = now.strftime("%Y-%m-%d")
             try:
                 # Create a context object for SSL/TLS connections
                 context = ssl.create_default_context()
 
                 # Connect to the server using the context
-                with socket.create_connection((url, 443), timeout=5) as sock:
+                with socket.create_connection((url, 443), timeout=3) as sock:
                     with context.wrap_socket(sock, server_hostname=url) as ssock:
                         cert = ssock.getpeercert()
 
@@ -108,24 +109,24 @@ def monitor_ssl(mode, interval, alert, report):
                         response = requests.get(f"http://{url}")
                         statusCode  = response.status_code
                         
-                        counter = counter + 1
+                        
 
-                       
-                            
-                
             except Exception as e:
                 console.print(f"[bold cyan][{current_time}][/bold cyan] {url} [bold red][SSL not found][/bold red]")
                 current_time
                 url
                 exp_date = f"SSL not found"
                 statusCode = "No response"
-                
+            
+            # Incremental for make report    
+            counter = counter + 1
+            
             if report == 'yes':
                 # Generate report
                 df.at[counter, 'date'] = current_time
                 df.at[counter, 'url'] = url
                 df.at[counter, 'status code'] = statusCode
-                df.at[counter, 'ssl exp'] = exp_date 
+                df.at[counter, 'ssl expiration date'] = exp_date 
         # Save report
             hoy = datetime.now()
             FFH = hoy.strftime("%Y-%m-%d_%H%M")
