@@ -76,9 +76,12 @@ def monitor_ssl(mode, interval, alert, report):
 
         counter = 1
         
-        for url in track(urls, description='progressing... !'):
+        for url in track(urls, description='Completing... !'):
+            print(f'[Auditing]: {url}')
+    
             now = datetime.now()
             current_time = now.strftime("%Y-%m-%d")
+            
             try:
                 # Create a context object for SSL/TLS connections
                 context = ssl.create_default_context()
@@ -94,24 +97,24 @@ def monitor_ssl(mode, interval, alert, report):
                         
                         date_difference = abs((exp_date - datetime.now()).days)
                                                 
-                        #SSL not expired
-                        if date_difference >= 31 :
-                            console.print(f"[bold cyan][{current_time}][/bold cyan] [bold green]{url} [{exp_date}][/bold green]")
+                        # #SSL not expired
+                        # if date_difference >= 31 :
+                        #     console.print(f"[bold cyan][{current_time}][/bold cyan] [bold green]{url} [{exp_date}][/bold green]")
 
-                        #SSL soon expire
-                        if date_difference < 30:
-                            console.print(f"[bold cyan][{current_time}][/bold cyan] [bold yellow]{url} [{exp_date}][/bold yellow]")
+                        # #SSL soon expire
+                        # if date_difference < 30:
+                        #     console.print(f"[bold cyan][{current_time}][/bold cyan] [bold yellow]{url} [{exp_date}][/bold yellow]")
 
-                        #SSL expired
-                        if datetime.now() > exp_date:
-                            console.print(f"[bold cyan][{current_time}][/bold cyan][bold red]{url} {exp_date}[/bold red]")
+                        # #SSL expired
+                        # if datetime.now() > exp_date:
+                        #     console.print(f"[bold cyan][{current_time}][/bold cyan][bold red]{url} {exp_date}[/bold red]")
 
                         # Get status
                         response = requests.get(f"http://{url}")
                         statusCode  = response.status_code
                         
             except Exception as e:
-                console.print(f"[bold cyan][{current_time}][/bold cyan] {url} [bold red][SSL not found][/bold red]")
+              #  console.print(f"[bold cyan][{current_time}][/bold cyan] {url} [bold red][SSL not found][/bold red]")
                 current_time
                 url
                 exp_date = f"SSL not found"
